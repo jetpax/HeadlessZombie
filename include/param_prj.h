@@ -97,6 +97,9 @@
     PARAM_ENTRY(CAT_IOPINS,    Out3Func,    PINFUNCS,  0,      9,      3,      82 ) \
     PARAM_ENTRY(CAT_IOPINS,    SL1Func,     PINFUNCS,  0,      9,      3,      83 ) \
     PARAM_ENTRY(CAT_IOPINS,    SL2Func,     PINFUNCS,  0,      9,      3,      84 ) \
+    PARAM_ENTRY(CAT_IOPINS,    pwmperiod,   "10 us",   0,      65535,  1000,   0  ) \
+    PARAM_ENTRY(CAT_IOPINS,    pwmdc2,      "%",       0,      100,    50,     0  ) \
+    PARAM_ENTRY(CAT_IOPINS,    pwmdc3,      "%",       0,      100,    50,     0  ) \
     PARAM_ENTRY(CAT_SHUNT,     ISA_INIT,    ONOFF,     0,      1,      0,      75 ) \
     VALUE_ENTRY(version,       VERSTR,              2000 ) \
     VALUE_ENTRY(opmode,        OPMODES,             2002 ) \
@@ -168,10 +171,12 @@
     VALUE_ENTRY(Test,          ONOFF,               2070 ) \
     VALUE_ENTRY(MG2Raw,        "dig",               2078 ) \
     VALUE_ENTRY(MG1Raw,        "dig",               2079 ) \
+    VALUE_ENTRY(anain1,        "dig",               2082 ) \
+    VALUE_ENTRY(anain2,        "dig",               2083 ) \
     VALUE_ENTRY(cpuload,       "%",                 2063 ) \
 
 
-//Next value Id: 2082
+//Next value Id: 2084
 
 
 #define VERSTR STRINGIFY(4=VER)

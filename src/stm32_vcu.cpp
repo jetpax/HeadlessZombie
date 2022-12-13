@@ -237,8 +237,8 @@ static void Ms200Task(void)
 
       if(!RunChg) chargeMode = false;
 
-      if(RunChg) DigIo::PWM3.Set();//enable charger digital line.
-      if(!RunChg) DigIo::PWM3.Clear();//disable charger digital line when requested by timer or webui.
+      //if(RunChg) DigIo::PWM3.Set();//enable charger digital line.
+      //if(!RunChg) DigIo::PWM3.Clear();//disable charger digital line when requested by timer or webui.
 
    }
 
@@ -279,14 +279,22 @@ static void Ms100Task(void)
    selectedVehicle->Task100Ms();
    canMap->SendAll();
 
-    if(opmode==MOD_RUN)
+   timer_set_period(TIM3, Param::GetInt(Param::pwmperiod)); //default to 10 kHz
+   timer_set_oc_value(TIM3, TIM_OC1, Param::GetFloat(Param::pwmperiod) * 0.5f);
+   timer_set_oc_value(TIM3, TIM_OC2, Param::GetFloat(Param::pwmperiod) * Param::GetFloat(Param::pwmdc2) / 100.0f);
+   timer_set_oc_value(TIM3, TIM_OC3, Param::GetFloat(Param::pwmperiod) * Param::GetFloat(Param::pwmdc3) / 100.0f);
+   Param::SetInt(Param::MG1Raw, AnaIn::MG1_Temp.Get());
+   Param::SetInt(Param::anain1, AnaIn::GP_analog1.Get());
+   Param::SetInt(Param::anain2, AnaIn::GP_analog2.Get());
+
+/*    if(opmode==MOD_RUN)
     {
        DigIo::PWM2.Set();//Enable run mode digital line to high.
     }
      else
      {
         DigIo::PWM2.Clear();
-     }
+     }*/
 
    // Leaf Gen2 PDM Charger/DCDC/Chademo
    if(targetChgint == ChargeInterfaces::Leaf_PDM &&
@@ -788,6 +796,7 @@ extern "C" int main(void)
    parm_load();
    spi2_setup();
    spi3_setup();
+   tim3_setup();
    Param::Change(Param::PARAM_LAST);
    DigIo::inv_out.Clear();//inverter power off during bootup
    DigIo::mcp_sby.Clear();//enable can3
