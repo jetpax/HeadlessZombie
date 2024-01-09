@@ -60,6 +60,7 @@
 		<Unit filename="include/MCP2515.h" />
 		<Unit filename="include/NissanPDM.h" />
 		<Unit filename="include/TeslaDCDC.h" />
+		<Unit filename="include/VWheater.h" />
 		<Unit filename="include/amperaheater.h" />
 		<Unit filename="include/anain_prj.h" />
 		<Unit filename="include/bms.h" />
@@ -100,6 +101,7 @@
 		<Unit filename="libopeninv/include/canmap.h" />
 		<Unit filename="libopeninv/include/digio.h" />
 		<Unit filename="libopeninv/include/errormessage.h" />
+		<Unit filename="libopeninv/include/linbus.h" />
 		<Unit filename="libopeninv/include/my_fp.h" />
 		<Unit filename="libopeninv/include/my_math.h" />
 		<Unit filename="libopeninv/include/my_string.h" />
@@ -115,6 +117,7 @@
 		<Unit filename="libopeninv/src/canmap.cpp" />
 		<Unit filename="libopeninv/src/digio.cpp" />
 		<Unit filename="libopeninv/src/errormessage.cpp" />
+		<Unit filename="libopeninv/src/linbus.cpp" />
 		<Unit filename="libopeninv/src/my_fp.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -139,6 +142,7 @@
 		<Unit filename="src/MCP2515.cpp" />
 		<Unit filename="src/NissanPDM.cpp" />
 		<Unit filename="src/TeslaDCDC.cpp" />
+		<Unit filename="src/VWheater.cpp" />
 		<Unit filename="src/amperacharger.cpp" />
 		<Unit filename="src/amperaheater.cpp" />
 		<Unit filename="src/bmw_sbox.cpp" />

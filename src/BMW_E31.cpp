@@ -29,6 +29,46 @@
 void BMW_E31::SetCanInterface(CanHardware* c)
 {
    c = c;
+<<<<<<< Updated upstream
+=======
+   tim_setup();//Fire up timer one...
+   timer_disable_counter(TIM1);//...but disable until needed
+   //note we are trying to reuse the lexus gs450h oil pump pwm output here to drive the tach
+   //Be aware this will prevent combo of E31 and GS450H for now ...
+   timerIsRunning=false;
+
+   can->RegisterUserMessage(0x153);//ASC message.
+//-B0
+//-B1 Speed LSB
+//-B2 Speed MSB [Signal startbit: 12, Bit length: 12, 0x0008 = 1 km/hr]
+//-B3
+//-B4
+//-B5
+//-B6
+//-B7
+
+   can->RegisterUserMessage(0x1F0);//ABS message.
+//Individual wheel speeds:
+//Signal wheel 1: startbit 0, bit length 12, Intel LSB, unsigned, gain 1/16 (0.0625) (byte0 + next 4 bits of Byte1)
+//Signal wheel 2: startbit 16, bit length 12, Intel LSB, unsigned, gain 1/16 (0.0625) (byte2 + next 4 bits of byte3)
+//Signal wheel 3: startbit 32, bit length 12, Intel LSB, unsigned, gain 1/16 (0.0625)
+//Signal wheel 4: startbit 48, bit length 12, Intel LSB, unsigned, gain 1/16 (0.0625)
+}
+
+
+void Bmw_E31::SetRevCounter(int speed)
+{
+
+   uint16_t speed_input = speed;
+   speed_input = MAX(750, speed_input);//
+   speed_input = MIN(7500, speed_input);
+   timerPeriod = 30000000 / speed_input; //TODO: find correct factor or make parameter. current gives 52Hz at 750rpm.
+   timer_set_period(TIM1, timerPeriod);
+   timer_set_oc_value(TIM1, TIM_OC1, timerPeriod / 2); //always stay at 50% duty cycle
+
+}
+
+>>>>>>> Stashed changes
 
 
 

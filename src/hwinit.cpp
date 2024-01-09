@@ -55,8 +55,9 @@ void clock_setup(void)
    rcc_periph_clock_enable(RCC_GPIOC);
    rcc_periph_clock_enable(RCC_GPIOD);
    rcc_periph_clock_enable(RCC_GPIOE);
-   rcc_periph_clock_enable(RCC_USART3);
+   rcc_periph_clock_enable(RCC_USART3);//WiFi
    rcc_periph_clock_enable(RCC_USART2);//GS450H Inverter Comms
+   rcc_periph_clock_enable(RCC_USART1);//LIN
    rcc_periph_clock_enable(RCC_TIM1); //GS450H oil pump pwm
    rcc_periph_clock_enable(RCC_TIM2); //GS450H 500khz usart clock
    rcc_periph_clock_enable(RCC_TIM3); //PWM outputs

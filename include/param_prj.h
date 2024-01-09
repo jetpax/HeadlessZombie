@@ -17,7 +17,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+<<<<<<< Updated upstream
 #define VER 2.03.A
+=======
+#define VER 2.05.A
+>>>>>>> Stashed changes
 
 
 /* Entries must be ordered as follows:
@@ -208,8 +212,11 @@
     VALUE_ENTRY(cpuload,       "%",                 2063 ) \
     VALUE_ENTRY(PPVal,         "dig",               2094 ) \
     VALUE_ENTRY(BrkVacVal,     "dig",               2095 ) \
+    VALUE_ENTRY(tmpheater,     "°C",                2096 ) \
+    VALUE_ENTRY(udcheater,     "V",                 2097 ) \
+    VALUE_ENTRY(powerheater,   "W",                 2098 ) \
 
-//Next value Id: 2096
+//Next value Id: 2099
 
 
 

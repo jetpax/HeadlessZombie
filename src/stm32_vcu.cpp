@@ -68,6 +68,12 @@ static Can_OI openInv;
 static OutlanderInverter outlanderInv;
 static noHeater Heaternone;
 static AmperaHeater amperaHeater;
+<<<<<<< Updated upstream
+=======
+static vwHeater heaterVW;
+static no_Lever NoGearLever;
+static F30_Lever F30GearLever;
+>>>>>>> Stashed changes
 static Inverter* selectedInverter = &openInv;
 static Vehicle* selectedVehicle = &vagVehicle;
 static Heater* selectedHeater = &Heaternone;
@@ -292,6 +298,7 @@ static void ControlCabHeater(int opmode)
 {
    //Only run heater in run mode
    //What about charge mode and timer mode?
+   //Patience grasshopper....
    if (opmode == MOD_RUN && Param::GetInt(Param::Control) == 1)
    {
       IOMatrix::GetPin(IOMatrix::HEATERENABLE)->Set();//Heater enable and coolant pump on
@@ -597,6 +604,7 @@ static void UpdateHeater()
       selectedHeater = &amperaHeater;
          break;
       case HeatType::VW:
+      selectedHeater = &heaterVW;
          break;
    }
    //This will call SetCanFilters() via the Clear Callback
