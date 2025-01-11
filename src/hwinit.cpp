@@ -326,11 +326,11 @@ void rtc_setup() {
     while (!(RCC_BDCR & RCC_BDCR_LSERDY));  // Wait for LSE to stabilize
 
     // Clear previous RTCSEL bits
-    RCC_BDCR &= ~RCC_BDCR_RTCSEL_MASK;
+    RCC_BDCR &= ~(RCC_BDCR_RTCSEL_MASK << RCC_BDCR_RTCSEL_SHIFT);
 
     // Set RTCSEL to LSE
-    RCC_BDCR |= RCC_BDCR_RTCSEL_LSE;
-    
+    RCC_BDCR |= (RCC_BDCR_RTCSEL_LSE << RCC_BDCR_RTCSEL_SHIFT);  
+
     // Enable RTC
     RCC_BDCR |= RCC_BDCR_RTCEN;
 
