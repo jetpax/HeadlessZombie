@@ -49,3 +49,36 @@ test_vcu
 
 # hex output - only keep for releases
 stm32_vcu.hex
+
+# PlatformIO Build and Cache Directories
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Python Bytecode Files
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code Configuration Files (if using VS Code)
+.vscode/
+*.code-workspace
+
+# Environment Files
+*.env
+*.ini.bak
+
+# PlatformIO Configuration Lock File
+platformio.ini.bkp
+
+python
+
+# Logs
+*.log
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*~
+

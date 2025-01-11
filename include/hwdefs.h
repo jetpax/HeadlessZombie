@@ -30,7 +30,15 @@
 #define MIN_PWM_DIGITS 11
 #define PERIPH_CLK      ((uint32_t)36000000)
 
+#if defined(STM32F1)
+
 #define RCC_CLOCK_SETUP rcc_clock_setup_in_hse_8mhz_out_72mhz
+
+#elif defined(STM32F4)
+
+#define RCC_CLOCK_SETUP rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
+
+#endif
 
 #define PWM_TIMER     TIM1
 #define PWM_TIMRST    RST_TIM1
@@ -55,5 +63,20 @@
 #define PARAM_BLKSIZE FLASH_PAGE_SIZE
 #define CAN1_BLKNUM   2
 #define CAN2_BLKNUM   4
+
+#ifdef STM32F4
+#define FLASH_SECTOR_0 0
+#define FLASH_SECTOR_1 1
+#define FLASH_SECTOR_2 2
+#define FLASH_SECTOR_3 3
+#define FLASH_SECTOR_4 4
+#define FLASH_SECTOR_5 5
+#define FLASH_SECTOR_6 6
+#define FLASH_SECTOR_7 7
+#define FLASH_SECTOR_8 8
+#define FLASH_SECTOR_9 9
+#define FLASH_SECTOR_10 10
+#define FLASH_SECTOR_11 11
+#endif
 
 #endif // HWDEFS_H_INCLUDED

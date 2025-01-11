@@ -37,20 +37,41 @@
 #include "iomatrix.h"
 #include "digio.h"
 
+extern volatile uint32_t rtc_counter;
+
+extern "C"  void rtc_wkup_isr(void) {
+  if (RTC_ISR & RTC_ISR_WUTF) {
+    // Clear the wakeup timer interrupt flag
+    RTC_ISR &= ~RTC_ISR_WUTF;
+
+    // Toggle an LED (example action)
+    gpio_toggle(GPIOA, GPIO15);
+
+    // Increment the counter for debugging
+    rtc_counter++;
+  }
+}
+
 /**
 * Start clocks of all needed peripherals
 */
 void clock_setup(void)
 {
-    RCC_CLOCK_SETUP();
+    RCC_CLOCK_SETUP;
 
+#ifdef STM32F1
     rcc_set_adcpre(RCC_CFGR_ADCPRE_PCLK2_DIV6);
-
+#elif defined(STM32F4)
+    // Configure APB2 prescaler for ADC clock
+    rcc_set_ppre2(RCC_CFGR_PPRE_DIV4);  // Divide APB2 clock by 4 (example)
+    // Set ADC prescaler
+    ADC_CCR = (ADC_CCR & ~ADC_CCR_ADCPRE_MASK) | ADC_CCR_ADCPRE_BY4;
+#endif
     //The reset value for PRIGROUP (=0) is not actually a defined
     //value. Explicitly set 16 preemtion priorities
     SCB_AIRCR = SCB_AIRCR_VECTKEY | SCB_AIRCR_PRIGROUP_GROUP16_NOSUB;
 
-    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOA);  // GPIOA for ADC input
     rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_GPIOC);
     rcc_periph_clock_enable(RCC_GPIOD);
@@ -64,65 +85,136 @@ void clock_setup(void)
     rcc_periph_clock_enable(RCC_TIM4); //Scheduler
     rcc_periph_clock_enable(RCC_DMA1);  //ADC, and UARTS
     // rcc_periph_clock_enable(RCC_DMA2);
-    rcc_periph_clock_enable(RCC_ADC1);
+    rcc_periph_clock_enable(RCC_ADC1);  // Enable ADC1 clock
     rcc_periph_clock_enable(RCC_CRC);
+#ifdef STM32F1
     rcc_periph_clock_enable(RCC_AFIO); //CAN AND USART3
+#endif
     rcc_periph_clock_enable(RCC_CAN1); //CAN1
     rcc_periph_clock_enable(RCC_CAN2); //CAN2
     rcc_periph_clock_enable(RCC_SPI2);  //CAN3
     rcc_periph_clock_enable(RCC_SPI3);  //Digital POTS
 }
 
-
-void spi2_setup()   //spi 2 used for CAN3
+#ifdef H_Z
+void spi1_setup()  // spi 1 used for CAN3 on sparkfun_micromod_f405
 {
+    // Enable SPI1 clock
+    rcc_periph_clock_enable(RCC_SPI1);
 
-    spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_32, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
-                    SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
-    spi_set_standard_mode(SPI2,0);//set mode 0
+    // Configure SPI1
+    spi_init_master(SPI1,
+                    SPI_CR1_BAUDRATE_FPCLK_DIV_16,    // assume APB2=84MHz, /16
+                                                        // gives 5.25MHz SPI clock
+                    SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,  // Clock polarity: idle low
+                    SPI_CR1_CPHA_CLK_TRANSITION_1,    // Clock phase: data sampled
+                                                        // on first clock transition
+                    SPI_CR1_DFF_8BIT,                 // Data frame format: 8-bit
+                    SPI_CR1_MSBFIRST);                // Data order: MSB first
+
+    // Since we are manually managing the SS line, we need to move it to
+    // software control here.
+    spi_enable_software_slave_management(SPI1);
+
+    // We also need to set the value of NSS high, so that our SPI peripheral
+    // doesn't think it is itself in slave mode.
+    spi_set_nss_high(SPI1);
+    // Configure PA5, PA6, and PA7 as Alternate Function for SPI1
+    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO5 | GPIO6 | GPIO7);
+    // Set alternate function 5 (AF5) for PA5, PA6, PA7
+    gpio_set_af(GPIOA, GPIO_AF5, GPIO5 | GPIO6 | GPIO7);
+    spi_enable(SPI1);
+}
+#else
+void spi2_setup()  // spi 2 used for CAN3
+{
+    spi_init_master(
+        SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_32, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+        SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
+    spi_set_standard_mode(SPI2, 0);  // set mode 0
 
     spi_enable_software_slave_management(SPI2);
-    //spi_enable_ss_output(SPI2);
+    // spi_enable_ss_output(SPI2);
     spi_set_nss_high(SPI2);
-    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO15 | GPIO13);//MOSI , CLK
-    gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO14);//MISO
+    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,
+                    GPIO15 | GPIO13);  // MOSI , CLK
+    gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO14);  // MISO
     spi_enable(SPI2);
 }
+#endif
 
-void spi3_setup()   //spi3 used for digi pots (fuel gauge etc)
+void spi3_setup()  // spi3 used for digi pots (fuel gauge etc)
 {
+  spi_init_master(
+      SPI3, SPI_CR1_BAUDRATE_FPCLK_DIV_32, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+      SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
+
+  spi_enable_software_slave_management(SPI3);
+  spi_set_nss_high(SPI3);
+
+#ifdef STM32F1
+    // STM32F1-specific GPIO setup
     gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON, AFIO_MAPR_SPI3_REMAP);
 
-    spi_init_master(SPI3, SPI_CR1_BAUDRATE_FPCLK_DIV_32, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
-                    SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
+    gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,
+                    GPIO12 | GPIO10);  // MOSI, SCK
+    gpio_set_mode(GPIOC, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO11);  // MISO
 
-    spi_enable_software_slave_management(SPI3);
-    spi_set_nss_high(SPI3);
-    gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO12 | GPIO10);//MOSI , CLK
-    gpio_set_mode(GPIOC, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO11);//MISO
+#elif defined(STM32F4)
+    // STM32F4-specific GPIO setup
+    rcc_periph_clock_enable(RCC_GPIOC);  // Enable GPIOC clock
+
+    gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE,
+                    GPIO10 | GPIO11 | GPIO12);               // SCK, MISO, MOSI
+    gpio_set_af(GPIOC, GPIO_AF6, GPIO10 | GPIO11 | GPIO12);  // SPI3 uses AF6
+    #endif
+
+    // Enable SPI3
     spi_enable(SPI3);
 }
 
 /**
 * Setup USART1 for LINbus
 */
+void usart1_setup(void) {
+#ifdef STM32F1
+    /* Setup GPIO pin GPIO_USART1_TX and GPIO_USART1_RX. */
+    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
+                    GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
+    gpio_set_mode(GPIOA, GPIO_MODE_INPUT,
+                    GPIO_CNF_INPUT_FLOAT, GPIO_USART1_RX);
+    usart_set_baudrate(USART1, 19200);
+    usart_set_databits(USART1, 8);
+    usart_set_stopbits(USART1, USART_STOPBITS_1);
+    usart_set_mode(USART1, USART_MODE_TX_RX);
+    usart_set_parity(USART1, USART_PARITY_NONE);
+    usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+    usart_enable(USART1);
+#elif defined(STM32F4)
+    // Enable clocks for USART1 and GPIOB
+    rcc_periph_clock_enable(RCC_USART1);
+    rcc_periph_clock_enable(RCC_GPIOB);
 
-void usart1_setup(void)
-{
-   /* Setup GPIO pin GPIO_USART1_TX and GPIO_USART1_RX. */
-   gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-                 GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
-   gpio_set_mode(GPIOA, GPIO_MODE_INPUT,
-                 GPIO_CNF_INPUT_FLOAT, GPIO_USART1_RX);
-   usart_set_baudrate(USART1, 19200);
-   usart_set_databits(USART1, 8);
-   usart_set_stopbits(USART1, USART_STOPBITS_1);
-   usart_set_mode(USART1, USART_MODE_TX_RX);
-   usart_set_parity(USART1, USART_PARITY_NONE);
-   usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
-   usart_enable(USART1);
+    // Configure PB6 (TX) and PB7 (RX) as Alternate Function for USART1
+    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6 | GPIO7);
+
+    // Set Alternate Function 7 (AF7) for USART1
+    gpio_set_af(GPIOB, GPIO_AF7, GPIO6 | GPIO7);
+
+    // Set up USART1 parameters: 19200 baud, 8N1
+    usart_set_baudrate(USART1, 19200);
+    usart_set_databits(USART1, 8);
+    usart_set_stopbits(USART1, USART_STOPBITS_1);
+    usart_set_parity(USART1, USART_PARITY_NONE);
+    usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
+    usart_set_mode(USART1, USART_MODE_TX_RX);
+
+    // Enable USART1
+    usart_enable(USART1);
+#endif
 }
 
+#ifndef H_Z      // Not supported on Headless Zombie
 /**
 * Setup USART2 500000 8N1 for Toyota inverter comms
 */
@@ -141,17 +233,21 @@ void usart2_setup(void)
     usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
     usart_enable(USART2);
 }
-
+#endif
 /**
 * Enable Timer refresh and break interrupts
 */
 void nvic_setup(void)
 {
+#ifndef H_Z // Not supported on Headless Zombie
+    // USART2_TX
     nvic_enable_irq(NVIC_DMA1_CHANNEL7_IRQ);
-    nvic_set_priority(NVIC_DMA1_CHANNEL7_IRQ, 0xf0);//usart2_TX
+    nvic_set_priority(NVIC_DMA1_CHANNEL7_IRQ, 0xf0); // High priority for USART2_TX
 
+    // USART2_RX
     nvic_enable_irq(NVIC_DMA1_CHANNEL6_IRQ);
-    nvic_set_priority(NVIC_DMA1_CHANNEL6_IRQ, 0xf0);//usart2_RX low priority int
+    nvic_set_priority(NVIC_DMA1_CHANNEL6_IRQ, 0xf0); // Low priority for USART2_RX
+#endif
 
     // nvic_enable_irq(NVIC_DMA1_CHANNEL3_IRQ);
     //nvic_set_priority(NVIC_DMA1_CHANNEL3_IRQ, 0x20);//usart3_RX high priority int
@@ -159,32 +255,109 @@ void nvic_setup(void)
     nvic_enable_irq(NVIC_TIM4_IRQ); //Scheduler on tim4
     nvic_set_priority(NVIC_TIM4_IRQ, 0); //Highest priority
 
-    nvic_enable_irq(NVIC_USB_LP_CAN_RX0_IRQ); //CAN RX
-    nvic_set_priority(NVIC_USB_LP_CAN_RX0_IRQ, 0xe << 4); //second lowest priority
+#ifdef STM32F1
+    // CAN RX (STM32F103)
+    nvic_enable_irq(NVIC_USB_LP_CAN_RX0_IRQ);
+    nvic_set_priority(NVIC_USB_LP_CAN_RX0_IRQ,
+                      0xe << 4);  // Second lowest priority
 
-    nvic_enable_irq(NVIC_USB_HP_CAN_TX_IRQ); //CAN TX
-    nvic_set_priority(NVIC_USB_HP_CAN_TX_IRQ, 0xe << 4); //second lowest priority
+    // CAN TX (STM32F103)
+    nvic_enable_irq(NVIC_USB_HP_CAN_TX_IRQ);
+    nvic_set_priority(NVIC_USB_HP_CAN_TX_IRQ,
+                      0xe << 4);  // Second lowest priority
 
-    /* Enable MCP2526 IRQ on PE15 */
-    nvic_enable_irq(NVIC_EXTI15_10_IRQ);
-    exti_enable_request(EXTI15);
-    exti_set_trigger(EXTI15, EXTI_TRIGGER_FALLING);
-    exti_select_source(EXTI15,GPIOE);
-    /* Without this the RTC interrupt routine will never be called. */
-    nvic_enable_irq(NVIC_RTC_IRQ);
-    nvic_set_priority(NVIC_RTC_IRQ, 0x20);
+#elif defined(STM32F4)
+    // CAN RX (STM32F405)
+    nvic_enable_irq(NVIC_CAN1_RX0_IRQ);  // Use NVIC_CAN2_RX0_IRQ for CAN2
+    nvic_set_priority(NVIC_CAN1_RX0_IRQ, 0xe << 4);  // Second lowest priority
 
+    // CAN TX (STM32F405)
+    nvic_enable_irq(NVIC_CAN1_TX_IRQ);  // Use NVIC_CAN2_TX_IRQ for CAN2
+    nvic_set_priority(NVIC_CAN1_TX_IRQ, 0xe << 4);  // Second lowest priority
+#endif
+
+#ifdef STM32F1
+    /* Configure PE15 as input for MCP2526 IRQ */
+    gpio_set_mode(GPIOE, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO15);
+
+    /* Configure EXTI for PE15 */
+    nvic_enable_irq(NVIC_EXTI15_10_IRQ);             // EXTI15_10 handles EXTI15
+    exti_enable_request(EXTI15);                     // Enable EXTI15
+    exti_set_trigger(EXTI15, EXTI_TRIGGER_FALLING);  // Trigger on falling edge
+    exti_select_source(EXTI15, GPIOE);               // Map EXTI15 to GPIOE
+
+    /* Configure RTC interrupt */
+    nvic_enable_irq(NVIC_RTC_IRQ);          // RTC IRQ for STM32F103
+    nvic_set_priority(NVIC_RTC_IRQ, 0x20);  // Second lowest priority
+
+#elif defined(STM32F4)
+    /* Enable GPIOC clock */
+    rcc_periph_clock_enable(RCC_GPIOC);
+
+    /* Configure PC8 as input for MCP2515 CAN3 IRQ */
+    gpio_mode_setup(GPIOC, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO8);
+
+    /* Configure EXTI for PC8 */
+    nvic_enable_irq(NVIC_EXTI9_5_IRQ);              // EXTI9_5 handles EXTI8
+    exti_enable_request(EXTI8);                     // Enable EXTI8
+    exti_set_trigger(EXTI8, EXTI_TRIGGER_FALLING);  // Trigger on falling edge
+    exti_select_source(EXTI8, GPIOC);               // Map EXTI8 to GPIOC
+#endif
 }
 
-void rtc_setup()
-{
-    //Base clock is HSE/128 = 8MHz/128 = 62.5kHz
-    //62.5kHz / (62499 + 1) = 1Hz
-    rtc_auto_awake(RCC_HSE, 62499); //1s tick
+void rtc_setup() {
+#ifdef STM32F1
+    // Base clock is HSE/128 = 8MHz/128 = 62.5kHz
+    // 62.5kHz / (62499 + 1) = 1Hz
+    rtc_auto_awake(RCC_HSE, 62499);  // 1s tick
     rtc_set_counter_val(0);
     //* Enable the RTC interrupt to occur off the SEC flag.
     rtc_clear_flag(RTC_SEC);
     rtc_interrupt_enable(RTC_SEC);
+#elif defined(STM32F4)
+    // Enable power interface clock
+    rcc_periph_clock_enable(RCC_PWR);
+
+    // Allow access to the backup domain
+    PWR_CR |= PWR_CR_DBP;
+
+    // Enable the LSE oscillator
+    RCC_BDCR |= RCC_BDCR_LSEON;
+    while (!(RCC_BDCR & RCC_BDCR_LSERDY));  // Wait for LSE to stabilize
+
+    // Clear previous RTCSEL bits
+    RCC_BDCR &= ~RCC_BDCR_RTCSEL_MASK;
+
+    // Set RTCSEL to LSE
+    RCC_BDCR |= RCC_BDCR_RTCSEL_LSE;
+    
+    // Enable RTC
+    RCC_BDCR |= RCC_BDCR_RTCEN;
+
+    // Unlock RTC configuration
+    rtc_unlock();
+
+    // Set the RTC prescaler for a 1Hz clock
+    rtc_set_prescaler(127, 255);  // (127 + 1) * (255 + 1) = 32,768 (LSE frequency)
+
+    // Disable the wakeup timer during configuration
+    rtc_disable_wakeup_timer();
+
+    rtc_set_wakeup_time(2047, RTC_CR_WUCLKSEL_RTC_DIV16);
+
+    // Setup PA15 as output for LED
+    rcc_periph_clock_enable(RCC_GPIOA);
+    gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO15);
+    // Set PA15 high
+    gpio_set(GPIOA, GPIO15);
+
+    // Enable the wakeup timer interrupt
+    rtc_enable_wakeup_timer_interrupt();
+
+    // Lock RTC configuration
+    rtc_lock();
+
+#endif
 }
 
 void tim_setup()
@@ -194,23 +367,72 @@ void tim_setup()
     //oil pump control pwm for Toyota hybrid gearbox Needs to be 1khz
     //Variable frequency output
     ////////////////////////////////////////////////////////////////////////
-    gpio_set_mode(GPIOE,GPIO_MODE_OUTPUT_2_MHZ,	// Low speed (only need 1khz)
-                  GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO9);	// GPIOE9=TIM1.CH1 Alt
+#ifdef STM32F1
+      /* STM32F103: Use GPIOE9 for TIM1.CH1 */
+      /* Enable GPIOE clock */
+      rcc_periph_clock_enable(RCC_GPIOE);
 
-    timer_disable_counter(TIM1);
-    timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_CENTER_1,
-                   TIM_CR1_DIR_UP);
-    timer_set_prescaler(TIM1,32); //16
-    timer_set_oc_mode(TIM1, TIM_OC1, TIM_OCM_PWM2);
-    timer_enable_oc_output(TIM1, TIM_OC1);
-    timer_enable_break_main_output(TIM1);
-    timer_set_oc_value(TIM1, TIM_OC1, 400);//duty. 1000 = 52% , 500 = 76% , 1500=28%
-    timer_set_period(TIM1, 1088);//frequency
-    timer_enable_counter(TIM1);
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      /* Configure GPIOE9 as Alternate Function Push-Pull for TIM1.CH1 */
+      gpio_set_mode(GPIOE, GPIO_MODE_OUTPUT_2_MHZ,
+                    GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO9);
+
+#elif defined(STM32F4)
+      /* STM32F405: Use GPIOC6 for TIM3.CH1 */
+      /* Enable GPIOC clock */
+      rcc_periph_clock_enable(RCC_GPIOC);
+
+      /* Configure GPIOC6 as Alternate Function for TIM3.CH1 */
+      gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
+      gpio_set_af(GPIOC, GPIO_AF2,
+                  GPIO6);  // TIM3 uses Alternate Function 2 (AF2)
+#endif
+
+      /* Timer configuration */
+#ifdef STM32F1
+      /* TIM1 configuration for STM32F103 */
+      timer_disable_counter(TIM1);
+      /* Set timer mode */
+      timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_CENTER_1,
+                     TIM_CR1_DIR_UP);
+      /* Set timer prescaler */
+      timer_set_prescaler(TIM1, 32);  // Adjust prescaler value as needed
+      /* Set PWM mode for TIM1.CH1 */
+      timer_set_oc_mode(TIM1, TIM_OC1, TIM_OCM_PWM2);
+      /* Enable output for TIM1.CH1 */
+      timer_enable_oc_output(TIM1, TIM_OC1);
+      /* Enable the main output for TIM1 (advanced timer requirement) */
+      timer_enable_break_main_output(TIM1);
+      /* Set PWM duty cycle (Output Compare value) */
+      timer_set_oc_value(TIM1, TIM_OC1, 400);  // Example duty cycle
+      /* Set timer period (frequency) */
+      timer_set_period(TIM1, 1088);  // Example frequency
+      /* Enable the timer */
+      timer_enable_counter(TIM1);
+
+#elif defined(STM32F4)
+      /* TIM3 configuration for STM32F405 */
+      timer_disable_counter(TIM3);
+      /* Set timer mode */
+      timer_set_mode(TIM3, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_CENTER_1,
+                     TIM_CR1_DIR_UP);
+      /* Set timer prescaler */
+      timer_set_prescaler(TIM3, 32);  // Adjust prescaler value as needed
+      /* Set PWM mode for TIM3.CH1 */
+      timer_set_oc_mode(TIM3, TIM_OC1, TIM_OCM_PWM2);
+      /* Enable output for TIM3.CH1 */
+      timer_enable_oc_output(TIM3, TIM_OC1);
+      /* Set PWM duty cycle (Output Compare value) */
+      timer_set_oc_value(TIM3, TIM_OC1, 400);  // Example duty cycle
+      /* Set timer period (frequency) */
+      timer_set_period(TIM3, 1088);  // Example frequency
+      /* Enable the timer */
+      timer_enable_counter(TIM3);
+#endif
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }
 
+#ifndef H_Z // Not supported on Headless Zombie
 void tim2_setup()
 {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -360,3 +582,13 @@ void tim3_setup()
         timer_enable_counter(TIM3);
     }
 }
+#endif
+
+#ifdef STM32F4
+uint32_t rtc_get_counter_val(void) {
+  /* emulate f1 rtc_get_counter_value*/
+  return rtc_counter;
+}
+
+#endif
+

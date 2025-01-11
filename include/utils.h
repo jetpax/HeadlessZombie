@@ -25,7 +25,9 @@ namespace utils
     void CpSpoofOutput();
     void SpeedoSet(uint16_t speed);
     void SpeedoStart();
-    void GS450hOilPump(uint16_t pumpdc);
+    #ifndef H_Z
+    // void GS450hOilPump(uint16_t pumpdc);
+    #endif
 }
 
 #endif

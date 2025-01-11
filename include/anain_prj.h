@@ -23,7 +23,11 @@
 #include "hwdefs.h"
 
 #define NUM_SAMPLES 12
-#define SAMPLE_TIME ADC_SMPR_SMP_7DOT5CYC
+#ifdef STM32F1
+#define SAMPLE_TIME ADC_SMPR_SMP_7DOT5CYC  
+#else
+#define SAMPLE_TIME ADC_SMPR_SMP_15CYC
+#endif
 
 #define ANA_IN_LIST \
    ANA_IN_ENTRY(throttle1, GPIOC, 0) \

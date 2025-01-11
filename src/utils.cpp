@@ -275,53 +275,71 @@ float ProcessUdc(int motorSpeed)
             udc = 0; //ensure we reset udc during off state to keep precharge working
         }
     }
-    else if (Param::GetInt(Param::ShuntType) == 1)//ISA shunt
+    else if (Param::GetInt(Param::ShuntType) == 1) // ISA shunt
     {
-        float udc = ((float)ISA::Voltage)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc, udc);
-        float udc2 = ((float)ISA::Voltage2)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc2, udc2);
-        float udc3 = ((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc3, udc3);
-        float idc = ((float)ISA::Amperes)/1000;//get current from isa sensor and post to parameter database
+        // Get voltage from ISA sensor and post to parameter database
+        float isaUdc = ((float)ISA::Voltage) / 1000;
+        Param::SetFloat(Param::udc, isaUdc);
+
+        // Get additional ISA sensor data and post to parameter database
+        float isaUdc2 = ((float)ISA::Voltage2) / 1000;
+        Param::SetFloat(Param::udc2, isaUdc2);
+        float isaUdc3 = ((float)ISA::Voltage3) / 1000;
+        Param::SetFloat(Param::udc3, isaUdc3);
+        float idc = ((float)ISA::Amperes) / 1000;
         Param::SetFloat(Param::idc, idc);
-        float kw = ((float)ISA::KW)/1000;//get power from isa sensor and post to parameter database
+        float kw = ((float)ISA::KW) / 1000;
         Param::SetFloat(Param::power, kw);
-        float kwh = ((float)ISA::KWh)/1000;//get kwh from isa sensor and post to parameter database
+        float kwh = ((float)ISA::KWh) / 1000;
         Param::SetFloat(Param::KWh, kwh);
-        float Amph = ((float)ISA::Ah)/3600;//get Ah from isa sensor and post to parameter database
+        float Amph = ((float)ISA::Ah) / 3600;
         Param::SetFloat(Param::AMPh, Amph);
-        float deltaVolts1 = (udc2 / 2) - udc3;
-        float deltaVolts2 = (udc2 + udc3) - udc;
+
+        // Calculate delta voltage values for parameter database
+        float deltaVolts1 = (isaUdc2 / 2) - isaUdc3;
+        float deltaVolts2 = (isaUdc2 + isaUdc3) - isaUdc;
         Param::SetFloat(Param::deltaV, MAX(deltaVolts1, deltaVolts2));
     }
-    else if (Param::GetInt(Param::ShuntType) == 2)//BMs Sbox
+    else if (Param::GetInt(Param::ShuntType) == 2) // BMS Sbox
     {
-        float udc = ((float)SBOX::Voltage2)/1000;//get output voltage from sbox sensor and post to parameter database
-        Param::SetFloat(Param::udc, udc);
-        float udc2 = ((float)SBOX::Voltage)/1000;//get battery voltage from sbox sensor and post to parameter database
-        Param::SetFloat(Param::udc2, udc2);
-        Param::SetFloat(Param::udcsw, udc2-20); //Set udcsw to 20V under battery voltage
-        float udc3 = 0;//((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc3, udc3);
-        float idc = ((float)SBOX::Amperes)/1000;//get current from sbox sensor and post to parameter database
+        // Get output voltage from Sbox sensor and post to parameter database
+        float sboxUdc = ((float)SBOX::Voltage2) / 1000;
+        Param::SetFloat(Param::udc, sboxUdc);
+
+        // Get battery voltage from Sbox sensor and post to parameter database
+        float sboxUdc2 = ((float)SBOX::Voltage) / 1000;
+        Param::SetFloat(Param::udc2, sboxUdc2);
+
+        // Set udcsw to 20V under battery voltage
+        Param::SetFloat(Param::udcsw, sboxUdc2 - 20);
+
+        // Post additional Sbox sensor data to parameter database
+        float sboxUdc3 = 0;
+        Param::SetFloat(Param::udc3, sboxUdc3);
+        float idc = ((float)SBOX::Amperes) / 1000;
         Param::SetFloat(Param::idc, idc);
-        float kw = (udc*idc)/1000;//get power from isa sensor and post to parameter database
+        float kw = (sboxUdc * idc) / 1000;
         Param::SetFloat(Param::power, kw);
     }
-    else if (Param::GetInt(Param::ShuntType) == 3)//VW
+    else if (Param::GetInt(Param::ShuntType) == 3) // VW
     {
-        float udc = ((float)VWBOX::Voltage)*0.5;//get output voltage from sbox sensor and post to parameter database
-        Param::SetFloat(Param::udc, udc);
-        float udc2 = ((float)VWBOX::Voltage2)*0.0625;//get battery voltage from sbox sensor and post to parameter database
-        Param::SetFloat(Param::udc2, udc2);
-        Param::SetFloat(Param::udcsw, udc2-20); //Set udcsw to 20V under battery voltage
-        float udc3 = 0;//((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc3, udc3);
-        float idc = ((float)VWBOX::Amperes)*0.1;//get current from sbox sensor and post to parameter database
+        // Get output voltage from VW sensor and post to parameter database
+        float vwUdc = ((float)VWBOX::Voltage) * 0.5;
+        Param::SetFloat(Param::udc, vwUdc);
+
+        // Get battery voltage from VW sensor and post to parameter database
+        float vwUdc2 = ((float)VWBOX::Voltage2) * 0.0625;
+        Param::SetFloat(Param::udc2, vwUdc2);
+
+        // Set udcsw to 20V under battery voltage
+        Param::SetFloat(Param::udcsw, vwUdc2 - 20);
+
+        // Post additional VW sensor data to parameter database
+        float vwUdc3 = 0;
+        Param::SetFloat(Param::udc3, vwUdc3);
+        float idc = ((float)VWBOX::Amperes) * 0.1;
         Param::SetFloat(Param::idc, idc);
     }
-
 
     //Calculate "12V" supply voltage from voltage divider on mprot pin
     //1.2/(4.7+1.2)/3.33*4095 = 250 -> make it a bit less for pin losses etc
@@ -589,6 +607,7 @@ void SpeedoSet(uint16_t speed)
     }
 }
 
+#ifndef H_Z 
 void GS450hOilPump(uint16_t pumpdc)
 {
     if(Param::GetInt(Param::PumpPWM) == 0)//If Pump PWM out is set to Oil Pump
@@ -620,5 +639,6 @@ void GS450hOilPump(uint16_t pumpdc)
         timer_set_oc_value(TIM3, TIM_OC3,pumpduty);//No duty set here
     }
 }
+#endif
 
 }// namespace utils

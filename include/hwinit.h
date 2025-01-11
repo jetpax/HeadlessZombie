@@ -35,10 +35,23 @@ void usart1_setup(void);
 void nvic_setup(void);
 void rtc_setup(void);
 void tim_setup(void);
+
+#ifndef H_Z  // Not supported on Headless Zombie
 void tim2_setup(void);
 void tim3_setup(void);
-void spi2_setup(void);
+#endif
+
+#ifdef SF_MM_F405    // SF_MMF405 uses SPI1 for CAN
+void spi1_setup(void);
+#else
+    void spi2_setup(void);
+#endif
+
 void spi3_setup(void);
+
+#ifdef STM32F4
+uint32_t rtc_get_counter_val(void);
+#endif
 
 #ifdef __cplusplus
 }
