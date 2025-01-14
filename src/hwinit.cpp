@@ -40,16 +40,13 @@
 extern volatile uint32_t rtc_counter;
 
 extern "C"  void rtc_wkup_isr(void) {
-  if (RTC_ISR & RTC_ISR_WUTF) {
     // Clear the wakeup timer interrupt flag
     RTC_ISR &= ~RTC_ISR_WUTF;
-
-    // Toggle an LED (example action)
+    exti_reset_request(EXTI22);  // clear irq
     gpio_toggle(GPIOA, GPIO15);
 
     // Increment the counter for debugging
     rtc_counter++;
-  }
 }
 
 /**
@@ -319,9 +316,9 @@ void rtc_setup() {
     rcc_periph_clock_enable(RCC_PWR);
 
     // Allow access to the backup domain
-    PWR_CR |= PWR_CR_DBP;
+    pwr_disable_backup_domain_write_protect();
 
-    // Enable the LSE oscillator
+    // Enable the 32kHz LSE oscillator
     RCC_BDCR |= RCC_BDCR_LSEON;
     while (!(RCC_BDCR & RCC_BDCR_LSERDY));  // Wait for LSE to stabilize
 
@@ -345,11 +342,13 @@ void rtc_setup() {
 
     rtc_set_wakeup_time(2047, RTC_CR_WUCLKSEL_RTC_DIV16);
 
-    // Setup PA15 as output for LED
+    // Setup PA15 as output for run LED
     rcc_periph_clock_enable(RCC_GPIOA);
     gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO15);
-    // Set PA15 high
     gpio_set(GPIOA, GPIO15);
+
+    // Enable the wakeup timer
+    rtc_enable_wakeup_timer();
 
     // Enable the wakeup timer interrupt
     rtc_enable_wakeup_timer_interrupt();
