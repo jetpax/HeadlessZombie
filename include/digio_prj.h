@@ -26,11 +26,11 @@
 #define DIG_IO_LIST \
     DIG_IO_ENTRY(HV_req,    GPIOD, GPIO5,  PinMode::INPUT_FLT)   \
     DIG_IO_ENTRY(start_in,  GPIOD, GPIO7,  PinMode::INPUT_FLT)   \
-    DIG_IO_ENTRY(brake_in,  GPIOA, GPIO15, PinMode::INPUT_FLT)   \
+    DIG_IO_ENTRY(brake_in,  GPIOE, GPIO12, PinMode::INPUT_FLT)   \
     DIG_IO_ENTRY(fwd_in,    GPIOB, GPIO4,  PinMode::INPUT_FLT)   \
     DIG_IO_ENTRY(rev_in,    GPIOB, GPIO3,  PinMode::INPUT_FLT)   \
     DIG_IO_ENTRY(dcsw_out,  GPIOC, GPIO7,  PinMode::OUTPUT)      \
-    DIG_IO_ENTRY(led_out,   GPIOE, GPIO2,  PinMode::OUTPUT)      \
+    DIG_IO_ENTRY(led_out,   GPIOA, GPIO15,  PinMode::OUTPUT)      \
     DIG_IO_ENTRY(gp_out1,   GPIOD, GPIO15, PinMode::OUTPUT)      \
     DIG_IO_ENTRY(gp_out2,   GPIOD, GPIO14, PinMode::OUTPUT)      \
     DIG_IO_ENTRY(gp_out3,   GPIOD, GPIO13, PinMode::OUTPUT)      \
