@@ -6,12 +6,12 @@ It differs from ZombieVerter in that it does not support GS450 directly (no sync
 
 It is primarily intended to run on a RetroVMS module, see https://github.com/jetpax/RetroVMS-MINI
 
-![image](https://github.com/user-attachments/assets/c584d99b-4438-47ad-a113-9328fe9f0993)
 
+![retroVMS MINI](images/retroVMS-MINI.png?raw=true)
 
 using a Sparkfun Micromod STM32F405
 
-![image](https://github.com/user-attachments/assets/99b32835-a8f7-409d-b947-08ffc6281d15)
+![SparkFunSTM32F405](/images/stm32f405.png)
 
 
 # Building
@@ -20,7 +20,7 @@ Builds under Platformio using VScode under Linux,MacOS and Windows
 Upload with STlink or BlackMagic or dfu (change platformio.ini to suit)
 
 
-[![Build status](../../actions/workflows/CI-build.yml/badge.svg)](../../actions/workflows/CI-build.yml)
+![Debugger](/images/debugger.png)
 
 
 Please visit the development thread on the Openinverter Forum for more information : https://openinverter.org/forum/viewtopic.php?t=5947
