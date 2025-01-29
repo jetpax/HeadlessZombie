@@ -57,6 +57,40 @@
 #define TERM_BUFSIZE       128
 
 
+#ifdef H_Z      // Headless uses SPI1 for CAN controller
+
+#define  CAN3_ISR   exti9_5_isr
+
+#define SPI_CAN             SPI1
+
+#define CAN3_CS_PORT        GPIOC
+#define CAN3_CS_PIN         GPIO2
+
+#define CAN3_INT_PORT       GPIOC
+#define CAN3_INT_PIN        GPIO8
+
+#define CAN3_EXTI           EXTI15    
+
+#define CAN3_EXTI_VECTOR    NVIC_EXTI9_5_IRQ
+
+#else           // Zombieverter uses SPI2
+
+#define  CAN3_ISR  exti15_10_isr
+
+#define SPI_CAN             SPI2
+
+#define CAN3_CS_PORT        GPIOB
+#define CAN3_CS_PIN         GPIO12
+
+#define CAN3_INT_PORT       GPIOE
+#define CAN3_INT_PIN        GPIO15
+
+#define CAN3_EXTI           EXTI8
+
+#define CAN3_EXTI_VECTOR     NVIC_EXTI15_10_IRQ
+
+#endif
+
 //Address of parameter block in flash for 105
 #define FLASH_PAGE_SIZE 2048
 #define PARAM_BLKNUM  1

@@ -43,10 +43,10 @@ extern "C"  void rtc_wkup_isr(void) {
     // Clear the wakeup timer interrupt flag
     RTC_ISR &= ~RTC_ISR_WUTF;
     exti_reset_request(EXTI22);  // clear irq
-    gpio_toggle(GPIOA, GPIO15);
-
-    // Increment the counter for debugging
+#ifdef STM32F4    
+    /* emulate f1 rtc_get_counter_value*/
     rtc_counter++;
+#endif
 }
 
 /**
@@ -116,6 +116,9 @@ void spi1_setup()  // spi 1 used for CAN3 on sparkfun_micromod_f405
     // We also need to set the value of NSS high, so that our SPI peripheral
     // doesn't think it is itself in slave mode.
     spi_set_nss_high(SPI1);
+
+    /* Configure MCP2515 CAN3 CS */
+    gpio_mode_setup(CAN3_CS_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, CAN3_CS_PIN);
     // Configure PA5, PA6, and PA7 as Alternate Function for SPI1
     gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO5 | GPIO6 | GPIO7);
     // Set alternate function 5 (AF5) for PA5, PA6, PA7
@@ -273,33 +276,29 @@ void nvic_setup(void)
     nvic_set_priority(NVIC_CAN1_TX_IRQ, 0xe << 4);  // Second lowest priority
 #endif
 
-#ifdef STM32F1
-    /* Configure PE15 as input for MCP2526 IRQ */
-    gpio_set_mode(GPIOE, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, GPIO15);
 
-    /* Configure EXTI for PE15 */
-    nvic_enable_irq(NVIC_EXTI15_10_IRQ);             // EXTI15_10 handles EXTI15
-    exti_enable_request(EXTI15);                     // Enable EXTI15
-    exti_set_trigger(EXTI15, EXTI_TRIGGER_FALLING);  // Trigger on falling edge
-    exti_select_source(EXTI15, GPIOE);               // Map EXTI15 to GPIOE
+
+#ifdef STM32F1
 
     /* Configure RTC interrupt */
     nvic_enable_irq(NVIC_RTC_IRQ);          // RTC IRQ for STM32F103
     nvic_set_priority(NVIC_RTC_IRQ, 0x20);  // Second lowest priority
+    /* Configure MCP2515 CAN3 IRQ */
+    gpio_set_mode(CAN3_INT_PORT, GPIO_MODE_INPUT, GPIO_CNF_INPUT_FLOAT, CAN3_INT_PIN);
 
-#elif defined(STM32F4)
+#else
+
     /* Enable GPIOC clock */
     rcc_periph_clock_enable(RCC_GPIOC);
+    /* Configure MCP2515 CAN3 IRQ */
+    gpio_mode_setup(CAN3_INT_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, CAN3_INT_PIN);
 
-    /* Configure PC8 as input for MCP2515 CAN3 IRQ */
-    gpio_mode_setup(GPIOC, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO8);
-
-    /* Configure EXTI for PC8 */
-    nvic_enable_irq(NVIC_EXTI9_5_IRQ);              // EXTI9_5 handles EXTI8
-    exti_enable_request(EXTI8);                     // Enable EXTI8
-    exti_set_trigger(EXTI8, EXTI_TRIGGER_FALLING);  // Trigger on falling edge
-    exti_select_source(EXTI8, GPIOC);               // Map EXTI8 to GPIOC
 #endif
+
+    nvic_enable_irq(CAN3_EXTI_VECTOR);                  // enable CAN3 EXTI vector
+    exti_enable_request(CAN3_EXTI);                     // Enable CAN3 EXTI interrupts
+    exti_set_trigger(CAN3_EXTI, EXTI_TRIGGER_FALLING);  // Trigger on falling edge
+    exti_select_source(CAN3_EXTI, CAN3_INT_PORT);       // Map interrupt to port
 }
 
 void rtc_setup() {

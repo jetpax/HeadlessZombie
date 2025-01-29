@@ -141,6 +141,7 @@ days=0,
 hours=0, minutes=0, seconds=0,
 alarm=0;			// != 0 when alarm is pending
 
+static uint8_t last_seconds;
 static uint16_t rlyDly=25;
 
 // Instantiate Classes
@@ -1179,7 +1180,8 @@ extern "C" void tim4_isr(void)
 }
 
 
-extern "C" void exti15_10_isr(void)    //CAN3 MCP25625 interruppt
+extern "C" void CAN3_ISR (void)       
+
 {
     uCAN_MSG rxMessage;
     uint32_t canData[2];
@@ -1189,8 +1191,8 @@ extern "C" void exti15_10_isr(void)    //CAN3 MCP25625 interruppt
         canData[1]=(rxMessage.frame.data4 | rxMessage.frame.data5<<8 | rxMessage.frame.data6<<16 | rxMessage.frame.data7<<24);
     }
     //can cast this to uint32_t[2]. dont be an idiot! * pointer
-    CANSPI_CLR_IRQ();   //Clear Rx irqs in mcp25625
-    exti_reset_request(EXTI15); // clear irq
+    CANSPI_CLR_IRQ();   //Clear Rx irqs in mcp25xx
+    exti_reset_request(CAN3_EXTI); // clear irq
     if((rxMessage.frame.id==0x108)||(rxMessage.frame.id==0x109)) selectedChargeInt->DecodeCAN(rxMessage.frame.id, canData);
 
 }
@@ -1221,25 +1223,22 @@ extern "C" int main(void)
 
     clock_setup();
     rtc_setup();
-    ConfigureVariantIO();
 #ifndef H_Z  // Not supported on Headless Zombie
     gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON, AFIO_MAPR_CAN2_REMAP | AFIO_MAPR_TIM1_REMAP_FULL_REMAP);//32f107
     usart2_setup();//TOYOTA HYBRID INVERTER INTERFACE
 #endif
     nvic_setup();
     parm_load();
-#ifdef H_Z  // Headless Zombie uses SPI1
+#ifdef H_Z  // Headless Zombie uses SPI1 for CAN controllers
     spi1_setup();
 #else
     spi2_setup();
 #endif
     spi3_setup();
+    
 #ifndef H_Z
     tim3_setup(); //For general purpose PWM output
 #endif
-    Param::Change(Param::PARAM_LAST);
-    DigIo::inv_out.Clear();//inverter power off during bootup
-    DigIo::mcp_sby.Clear();//enable can3
 
     Terminal t(USART3, TermCmds);
 //   FunctionPointerCallback canCb(CanCallback, SetCanFilters);
@@ -1278,6 +1277,18 @@ extern "C" int main(void)
     LinBus l(USART1, 19200);
     lin = &l;
 
+    // now that SPI and LIN are configured, enable external I/O
+    ConfigureVariantIO();
+
+    Param::Change(Param::PARAM_LAST);
+
+    #ifndef H_Z  // Not supported on Headless Zombie
+
+    DigIo::inv_out.Clear();//inverter power off during bootup
+    DigIo::mcp_sby.Clear();//enable can3
+
+    #endif
+
     UpdateInv();
     UpdateVehicle();
     UpdateCharger();
@@ -1308,6 +1319,15 @@ extern "C" int main(void)
       if (sdo.GetPrintRequest() == PRINT_JSON) {
         TerminalCommands::PrintParamsJson(&sdo, &receivedChar);
         }
+
+    // DEBUG!!!!!!!!!!!!!!!!!!
+    static uint32_t last_rtc_tr; 
+    if ((RTC_TR & 0x7F) !=  (last_rtc_tr & 0x7F)){
+        DigIo::lin_nslp.Toggle();   
+        last_rtc_tr = RTC_TR;;     
+    }
+    // END DEBUG!!!!!!!!!!!!!!!
+
     }
 
     return 0;
