@@ -25,7 +25,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "digio.h"
 #include <libopencm3/stm32/spi.h>
 
 // MCP2515 SPI Instruction Set
@@ -266,5 +265,7 @@ uint8_t MCP2515_Get_RxStatus (void);
 void MCP2515_Bit_Modify (uint8_t regAddress, uint8_t maskByte, uint8_t dataByte);
 
 void MCP2515_PinEn(uint8_t pin, bool state);
+
+void MCP2515_Out_Pin(uint8_t pin, bool state);
 
 #endif	/* MCP2515_H */

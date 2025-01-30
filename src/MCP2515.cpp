@@ -20,12 +20,8 @@
     TERMS.
 */
 
-//#include <xc.h>
-//#include "spi1.h"
-//#include "spi1_master.h"
-//#include "spi1_types.h"
 #include "MCP2515.h"
-//#include "pin_manager.h"
+#include "digio.h"
 
 //Defines for chip select
 #define MCP2515_CS_HIGH()   GPIO_BSRR(CAN3_CS_PORT) = CAN3_CS_PIN;

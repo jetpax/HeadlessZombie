@@ -37,7 +37,7 @@
     DIG_IO_ENTRY(sw_mode0,  GPIOE, GPIO7,  PinMode::OUTPUT)      \
     DIG_IO_ENTRY(sw_mode1,  GPIOE, GPIO7,  PinMode::OUTPUT)      \
     DIG_IO_ENTRY(lin_wake,  GPIOE, GPIO7, PinMode::OUTPUT)      \
-    DIG_IO_MCP2515_ENTRY(lin_nslp, 0x01, MCP2515PinMode::OUTPUT) \
+    BUS_IO_ENTRY(lin_nslp, BusType::MCP2515, 0x01, BusPinMode::OUTPUT) \
     DIG_IO_ENTRY(prec_out,  GPIOE, GPIO7,  PinMode::OUTPUT)      \
     DIG_IO_ENTRY(inv_out,   GPIOE, GPIO7,  PinMode::OUTPUT)      \
     DIG_IO_ENTRY(SL1_out,   GPIOE, GPIO7,  PinMode::OUTPUT)      \
@@ -55,7 +55,7 @@
     DIG_IO_ENTRY(PWM1,      GPIOE, GPIO7,  PinMode::OUTPUT)      \
     DIG_IO_ENTRY(t15_digi,  GPIOE, GPIO7,  PinMode::INPUT_FLT)   \
     DIG_IO_ENTRY(gp_12Vin,  GPIOE, GPIO7,  PinMode::INPUT_FLT)   \
-    DIG_IO_MCP2515_ENTRY(can2_term, 0x00, MCP2515PinMode::OUTPUT)\
+    BUS_IO_ENTRY(can2_term, BusType::MCP2515, 0x00, BusPinMode::OUTPUT) \
     DIG_IO_ENTRY(dummypin,  GPIOE, GPIO7,  PinMode::INPUT_PD)   \
 
 //dummypin is used by IOMatrix class for unused functions. Must be set to a pin that has no effect
