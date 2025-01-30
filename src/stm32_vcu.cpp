@@ -50,7 +50,9 @@
 #include "Can_OI.h"
 #include "outlanderinverter.h"
 #include "Can_VAG.h"
+#ifndef H_Z     //  not supported in Headless Zombie
 #include "GS450H.h"
+#endif
 #include "throttle.h"
 #include "utils.h"
 #include "teslaCharger.h"
@@ -107,6 +109,7 @@
 
 #define PRINT_JSON 0
 
+volatile uint32_t rtc_counter = 0;  
 
 extern "C" void __cxa_pure_virtual()
 {
@@ -138,6 +141,7 @@ days=0,
 hours=0, minutes=0, seconds=0,
 alarm=0;			// != 0 when alarm is pending
 
+static uint8_t last_seconds;
 static uint16_t rlyDly=25;
 
 // Instantiate Classes
@@ -146,7 +150,9 @@ static BMW_E65 e65Vehicle;
 static BMW_E39 e39Vehicle;
 static Can_VAG vagVehicle;
 static SubaruVehicle subaruVehicle;
+#ifndef H_Z  // Not supported on Headless Zombie
 static GS450HClass gs450Inverter;
+#endif
 static LeafINV leafInv;
 static NissanPDM chargerPDM;
 static teslaCharger ChargerTesla;
@@ -738,6 +744,7 @@ static void UpdateInv()
     case InvModes::Leaf_Gen1:
         selectedInverter = &leafInv;
         break;
+#ifndef H_Z
     case InvModes::GS450H:
         selectedInverter = &gs450Inverter;
         gs450Inverter.SetGS450H();
@@ -750,6 +757,7 @@ static void UpdateInv()
         selectedInverter = &gs450Inverter;
         gs450Inverter.SetPrius();
         break;
+#endif
     case InvModes::Outlander:
         selectedInverter = &outlanderInv;
         OutlanderCAN = true;
@@ -1058,9 +1066,11 @@ void Param::Change(Param::PARAM_NUM paramNum)
     case Param::Tim3_3_OC:
     case Param::PWM1Func:
     case Param::PWM2Func:
+#ifndef H_Z
     case Param::PWM3Func:
         tim3_setup();
         break;
+#endif
     case Param::CP_PWM:
         //timer_set_oc_value(TIM3, TIM_OC3, (Param::GetInt(Param::CP_PWM)*66)-16);//No duty set here
         break;
@@ -1169,7 +1179,8 @@ extern "C" void tim4_isr(void)
 }
 
 
-extern "C" void exti15_10_isr(void)    //CAN3 MCP25625 interruppt
+extern "C" void CAN3_ISR (void)       
+
 {
     uCAN_MSG rxMessage;
     uint32_t canData[2];
@@ -1179,33 +1190,31 @@ extern "C" void exti15_10_isr(void)    //CAN3 MCP25625 interruppt
         canData[1]=(rxMessage.frame.data4 | rxMessage.frame.data5<<8 | rxMessage.frame.data6<<16 | rxMessage.frame.data7<<24);
     }
     //can cast this to uint32_t[2]. dont be an idiot! * pointer
-    CANSPI_CLR_IRQ();   //Clear Rx irqs in mcp25625
-    exti_reset_request(EXTI15); // clear irq
+    CANSPI_CLR_IRQ();   //Clear Rx irqs in mcp25xx
+    exti_reset_request(CAN3_EXTI); // clear irq
     if((rxMessage.frame.id==0x108)||(rxMessage.frame.id==0x109)) selectedChargeInt->DecodeCAN(rxMessage.frame.id, canData);
 
 }
 
-extern "C" void rtc_isr(void)
-{
-    /* The interrupt flag isn't cleared by hardware, we have to do it. */
-    rtc_clear_flag(RTC_SEC);
+#ifdef STM32F1
+extern "C" void rtc_isr(void) {
+  /* The interrupt flag isn't cleared by hardware, we have to do it. */
+  rtc_clear_flag(RTC_SEC);
 
-    if ( ++seconds >= 60 )
-    {
-        ++minutes;
-        seconds -= 60;
-    }
-    if ( minutes >= 60 )
-    {
-        ++hours;
-        minutes -= 60;
-    }
-    if ( hours >= 24 )
-    {
-        ++days;
-        hours -= 24;
-    }
+  if (++seconds >= 60) {
+    ++minutes;
+    seconds -= 60;
+  }
+  if (minutes >= 60) {
+    ++hours;
+    minutes -= 60;
+  }
+  if (hours >= 24) {
+    ++days;
+    hours -= 24;
+  }
 }
+#endif
 
 extern "C" int main(void)
 {
@@ -1213,17 +1222,22 @@ extern "C" int main(void)
 
     clock_setup();
     rtc_setup();
-    ConfigureVariantIO();
+#ifndef H_Z  // Not supported on Headless Zombie
     gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON, AFIO_MAPR_CAN2_REMAP | AFIO_MAPR_TIM1_REMAP_FULL_REMAP);//32f107
     usart2_setup();//TOYOTA HYBRID INVERTER INTERFACE
+#endif
     nvic_setup();
     parm_load();
+#ifdef H_Z  // Headless Zombie uses SPI1 for CAN controllers
+    spi1_setup();
+#else
     spi2_setup();
+#endif
     spi3_setup();
+    
+#ifndef H_Z
     tim3_setup(); //For general purpose PWM output
-    Param::Change(Param::PARAM_LAST);
-    DigIo::inv_out.Clear();//inverter power off during bootup
-    DigIo::mcp_sby.Clear();//enable can3
+#endif
 
     Terminal t(USART3, TermCmds);
 //   FunctionPointerCallback canCb(CanCallback, SetCanFilters);
@@ -1262,6 +1276,18 @@ extern "C" int main(void)
     LinBus l(USART1, 19200);
     lin = &l;
 
+    // now that SPI and LIN are configured, enable external I/O
+    ConfigureVariantIO();
+
+    Param::Change(Param::PARAM_LAST);
+
+    #ifndef H_Z  // Not supported on Headless Zombie
+
+    DigIo::inv_out.Clear();//inverter power off during bootup
+    DigIo::mcp_sby.Clear();//enable can3
+
+    #endif
+
     UpdateInv();
     UpdateVehicle();
     UpdateCharger();
@@ -1279,20 +1305,28 @@ extern "C" int main(void)
     s.AddTask(Ms100Task, 100);
     s.AddTask(Ms200Task, 200);
 
-    if(Param::GetInt(Param::IsaInit)==1) ISA::initialize(shunt_can);//only call this once if a new sensor is fitted.
+    // if(Param::GetInt(Param::IsaInit)==1) ISA::initialize(shunt_can);//only call this once if a new sensor is fitted.
 
 
-    Param::SetInt(Param::version, 4); //backward compatibility
-    Param::SetInt(Param::opmode, MOD_OFF);//always off at startup
+    // Param::SetInt(Param::version, 4); //backward compatibility
+    // Param::SetInt(Param::opmode, MOD_OFF);//always off at startup
 
     while(1)
     {
-        char c = 0;
-        t.Run();
-        if (sdo.GetPrintRequest() == PRINT_JSON)
-        {
-            TerminalCommands::PrintParamsJson(&sdo, &c);
+      char receivedChar = 0;
+    //   t.Run();
+      if (sdo.GetPrintRequest() == PRINT_JSON) {
+        TerminalCommands::PrintParamsJson(&sdo, &receivedChar);
         }
+
+    // DEBUG!!!!!!!!!!!!!!!!!!
+    static uint32_t last_rtc_tr; 
+    if ((RTC_TR & 0x7F) !=  (last_rtc_tr & 0x7F)){
+        DigIo::lin_nslp.Toggle();   
+        last_rtc_tr = RTC_TR;;     
+    }
+    // END DEBUG!!!!!!!!!!!!!!!
+
     }
 
     return 0;

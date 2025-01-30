@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "chademo.h"
-
+#include "hwinit.h"
 
 bool FCChademo::chargeEnabled = false;
 bool FCChademo::parkingPosition = false;

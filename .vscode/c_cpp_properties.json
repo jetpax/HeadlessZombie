@@ -1,20 +1,49 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "PlatformIO",
             "includePath": [
-                "${workspaceFolder}/include",
-                "${workspaceFolder}/libopeninv/include",
-                "${workspaceFolder}/libopencm3/include"
+                "/Users/jep/github/Stm32-vcu/include",
+                "/Users/jep/github/Stm32-vcu/src",
+                "/Users/jep/github/Stm32-vcu/libopeninv/include",
+                "/Users/jep/.platformio/packages/framework-libopencm3",
+                "/Users/jep/.platformio/packages/framework-libopencm3/include",
+                ""
             ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "/Users/jep/github/Stm32-vcu/include",
+                    "/Users/jep/github/Stm32-vcu/src",
+                    "/Users/jep/github/Stm32-vcu/libopeninv/include",
+                    "/Users/jep/.platformio/packages/framework-libopencm3",
+                    "/Users/jep/.platformio/packages/framework-libopencm3/include",
+                    ""
+                ]
+            },
             "defines": [
-                "STM32F1"
+                "PLATFORMIO=60116",
+                "STM32F4",
+                "STM32F405xx",
+                "STM32F4=1",
+                "SF_MM_F405=1",
+                "H_Z=1",
+                "F_CPU=168000000L",
+                ""
             ],
-            "compilerPath": "/usr/lib64/ccache/arm-none-eabi-gcc",
-            "cStandard": "c11",
-            "intelliSenseMode": "linux-gcc-arm",
-            "cppStandard": "c++17",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "compilerPath": "/Users/jep/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gcc",
+            "compilerArgs": [
+                "-mthumb",
+                "-mcpu=cortex-m4",
+                "-mfloat-abi=hard",
+                "-mfpu=fpv4-sp-d16",
+                ""
+            ]
         }
     ],
     "version": 4

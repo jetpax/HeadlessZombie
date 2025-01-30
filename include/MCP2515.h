@@ -25,7 +25,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "digio.h"
 #include <libopencm3/stm32/spi.h>
 
 // MCP2515 SPI Instruction Set
@@ -66,6 +65,7 @@
 #define MCP2515_RXF2SIDL	0x09
 #define MCP2515_RXF2EID8	0x0A
 #define MCP2515_RXF2EID0	0x0B
+#define MCP2515_BFPCTRL 	0x0C		//RXnBF Control and Status
 #define MCP2515_CANSTAT		0x0E
 #define MCP2515_CANCTRL		0x0F
 
@@ -111,6 +111,16 @@
 #define MSG_IN_RXB0             0x01
 #define MSG_IN_RXB1             0x02
 #define MSG_IN_BOTH_BUFFERS     0x03
+
+
+// Define masks for BFPCTRL
+#define BFPCTRL_B0BFM   0x01  
+#define BFPCTRL_B1BFM   0x02
+#define BFPCTRL_B0BFE   0x04  
+#define BFPCTRL_B1BFE   0x08  
+#define BFPCTRL_B0BFS   0x10
+#define BFPCTRL_B1BFS   0x20
+
 
 typedef union{
     struct {
@@ -253,5 +263,9 @@ uint8_t MCP2515_Read_Status (void);
 uint8_t MCP2515_Get_RxStatus (void);
 
 void MCP2515_Bit_Modify (uint8_t regAddress, uint8_t maskByte, uint8_t dataByte);
+
+void MCP2515_PinEn(uint8_t pin, bool state);
+
+void MCP2515_Out_Pin(uint8_t pin, bool state);
 
 #endif	/* MCP2515_H */

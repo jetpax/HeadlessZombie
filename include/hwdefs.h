@@ -30,7 +30,15 @@
 #define MIN_PWM_DIGITS 11
 #define PERIPH_CLK      ((uint32_t)36000000)
 
+#if defined(STM32F1)
+
 #define RCC_CLOCK_SETUP rcc_clock_setup_in_hse_8mhz_out_72mhz
+
+#elif defined(STM32F4)
+
+#define RCC_CLOCK_SETUP rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
+
+#endif
 
 #define PWM_TIMER     TIM1
 #define PWM_TIMRST    RST_TIM1
@@ -49,11 +57,60 @@
 #define TERM_BUFSIZE       128
 
 
+#ifdef H_Z      // Headless uses SPI1 for CAN controller
+
+#define  CAN3_ISR   exti9_5_isr
+
+#define SPI_CAN             SPI1
+
+#define CAN3_CS_PORT        GPIOC
+#define CAN3_CS_PIN         GPIO2
+
+#define CAN3_INT_PORT       GPIOC
+#define CAN3_INT_PIN        GPIO8
+
+#define CAN3_EXTI           EXTI15    
+
+#define CAN3_EXTI_VECTOR    NVIC_EXTI9_5_IRQ
+
+#else           // Zombieverter uses SPI2
+
+#define  CAN3_ISR  exti15_10_isr
+
+#define SPI_CAN             SPI2
+
+#define CAN3_CS_PORT        GPIOB
+#define CAN3_CS_PIN         GPIO12
+
+#define CAN3_INT_PORT       GPIOE
+#define CAN3_INT_PIN        GPIO15
+
+#define CAN3_EXTI           EXTI8
+
+#define CAN3_EXTI_VECTOR     NVIC_EXTI15_10_IRQ
+
+#endif
+
 //Address of parameter block in flash for 105
 #define FLASH_PAGE_SIZE 2048
 #define PARAM_BLKNUM  1
 #define PARAM_BLKSIZE FLASH_PAGE_SIZE
 #define CAN1_BLKNUM   2
 #define CAN2_BLKNUM   4
+
+#ifdef STM32F4
+#define FLASH_SECTOR_0 0
+#define FLASH_SECTOR_1 1
+#define FLASH_SECTOR_2 2
+#define FLASH_SECTOR_3 3
+#define FLASH_SECTOR_4 4
+#define FLASH_SECTOR_5 5
+#define FLASH_SECTOR_6 6
+#define FLASH_SECTOR_7 7
+#define FLASH_SECTOR_8 8
+#define FLASH_SECTOR_9 9
+#define FLASH_SECTOR_10 10
+#define FLASH_SECTOR_11 11
+#endif
 
 #endif // HWDEFS_H_INCLUDED
