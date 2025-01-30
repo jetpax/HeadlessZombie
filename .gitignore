@@ -49,3 +49,7 @@ test_vcu
 
 # hex output - only keep for releases
 stm32_vcu.hex
+
+.pio
+.vscode
+*.code-workspace
