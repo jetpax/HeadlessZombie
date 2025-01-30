@@ -23,17 +23,23 @@
 #include "hwdefs.h"
 
 #define NUM_SAMPLES 12
-#define SAMPLE_TIME ADC_SMPR_SMP_7DOT5CYC
+#ifdef STM32F1
+#define SAMPLE_TIME ADC_SMPR_SMP_7DOT5CYC  
+#else
+#define SAMPLE_TIME ADC_SMPR_SMP_15CYC
+#endif
 
 #define ANA_IN_LIST \
-   ANA_IN_ENTRY(throttle1, GPIOC, 0) \
-   ANA_IN_ENTRY(throttle2, GPIOC, 1) \
-   ANA_IN_ENTRY(uaux,      GPIOB, 1) \
-   ANA_IN_ENTRY(GP_analog1,GPIOC, 2) \
-   ANA_IN_ENTRY(GP_analog2,GPIOC, 3) \
-   ANA_IN_ENTRY(MG1_Temp,  GPIOC, 5) \
-   ANA_IN_ENTRY(MG2_Temp,  GPIOC, 4) \
-   ANA_IN_ENTRY(dummyAnal, GPIOC, 11) \
+   ANA_IN_ENTRY(throttle1, GPIOA, 1) \
+   ANA_IN_ENTRY(throttle2, GPIOA, 1) \
+   ANA_IN_ENTRY(uaux,      GPIOA, 1) \
+   ANA_IN_ENTRY(GP_analog1,GPIOA, 1) \
+   ANA_IN_ENTRY(GP_analog2,GPIOA, 1) \
+   ANA_IN_ENTRY(MG1_Temp,  GPIOA, 1) \
+   ANA_IN_ENTRY(MG2_Temp,  GPIOA, 1) \
+   ANA_IN_ENTRY(dummyAnal, GPIOA, 1) \
 
-//dummyAnal is used by IOMatrix class for unused functions. Must be set to a pin that has no effect
+//dummyAnal is used by IOMatrix class for unused functions. 
+//Must be set to a pin that has no effect
+// PA1 corresponds to BATT_VIN which is not connected on Headless
 #endif // ANAIN_PRJ_H_INCLUDED
