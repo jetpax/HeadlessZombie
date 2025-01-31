@@ -1,9 +1,7 @@
 /*
- * This file is part of the ZombieVeter project.
+ * This file is part of the ZombieVerter project.
  *
- * Copyright (C) 2020 Johannes Huebner <dev@johanneshuebner.com>
- *               2021-2022 Damien Maguire <info@evbmw.com>
- * Yes I'm really writing software now........run.....run away.......
+ * Copyright (C) 2021-2023  Tom de Bree <Tom@voltinflux.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,24 +15,33 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *
  */
 
-#ifndef notused_h
-#define notused_h
-
-/*  Dummy library for whrn no charge interface is used. */
+#ifndef NISSLEAFMNG_H
+#define NISSLEAFMNG_H
 
 #include <stdint.h>
-#include "chargerint.h"
+#include "params.h"
+#include "canhardware.h"
+#include "my_fp.h"
+#include "my_math.h"
+#include "utils.h"
 
-class notused: public Chargerint
+class NissLeafMng
 {
 
 public:
-bool ACRequest(bool RunCh){return RunCh;};
+static void Task10Ms(int16_t final_torque_request);
+static void Task100Ms();
+static void SetCanInterface(CanHardware* c);
+static void SetPullInEVSE(bool pullInEVSE);
+static void nissan_crc(uint8_t *data, uint8_t polynomial);
 
-private:
+
+protected:
 
 };
 
-#endif /* notused_h */
+#endif
