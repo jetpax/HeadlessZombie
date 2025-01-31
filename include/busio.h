@@ -17,14 +17,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "MCP2515.h"
+#include <stdint.h>
 
 enum class BusType : uint8_t
 {
     MCP2515,
     TIC12400,
-    DRV8912
+    DRV8912,
+    UJA1023
 };
 
 // Bus IO pin modes 
@@ -49,4 +49,5 @@ private:
     uint16_t _pin;
     bool _last=0;
     BusPinMode _mode = BusPinMode::HI_Z;
+    BusType _btype = BusType::MCP2515;
 };
