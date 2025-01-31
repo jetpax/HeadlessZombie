@@ -20,10 +20,16 @@
 #include "busio.h"
 
 
+// Include BUS based drivers here
+#include "MCP2515.h"
+
+
 void BusIo::Configure(BusType btype, uint8_t pin, BusPinMode pmode)
 { 
     _pin = pin;
-    
+    _btype = btype;
+    _mode = pmode;
+
    switch (pmode)
     {
         default:
@@ -37,6 +43,78 @@ void BusIo::Configure(BusType btype, uint8_t pin, BusPinMode pmode)
     }
 }
 bool BusIo::Get()    { return _last; }
-void BusIo::Set()    { MCP2515_Out_Pin(_pin, true), _last = true; }
-void BusIo::Clear()  { MCP2515_Out_Pin(_pin, false), _last = false;  }   
-void BusIo::Toggle() { MCP2515_Out_Pin(_pin, _last ? false :true), _last ^= 1; }
+
+void BusIo::Set() { 
+    switch (_btype)
+    {
+        case BusType::MCP2515:
+            MCP2515_Out_Pin(_pin, true), _last = true;        
+            break;
+
+        case BusType::DRV8912:
+        //TBD add TI DRV8912 12-channel O/P driver
+            break;
+
+        case BusType::TIC12400:
+        // TBD add TI 24-channel I/P driver
+            break;      
+
+        case BusType::UJA1023:
+        //TBD add UJA1023 LINbus I/O follower driver
+            break;  
+
+        default:  
+        // error or add more bus drivers eg I2C
+            break;   
+    }    
+}
+
+void BusIo::Clear()  { 
+    switch (_btype)
+    {
+        case BusType::MCP2515:
+            MCP2515_Out_Pin(_pin, false), _last = false; 
+            break;
+
+        case BusType::DRV8912:
+        //TBD add TI DRV8912 12-channel O/P driver
+            break;
+
+        case BusType::TIC12400:
+        // TBD add TI 24-channel I/P driver
+            break;      
+
+        case BusType::UJA1023:
+        //TBD add UJA1023 LINbus I/O follower driver
+            break;  
+
+        default:  
+        // error or add more bus drivers eg I2C
+            break;  
+    }     
+}
+
+void BusIo::Toggle() { 
+    switch (_btype)
+    {
+        case BusType::MCP2515:
+            MCP2515_Out_Pin(_pin, _last ? false :true), _last ^= 1; 
+            break;
+
+        case BusType::DRV8912:
+        //TBD add TI DRV8912 12-channel O/P driver
+            break;
+
+        case BusType::TIC12400:
+        // TBD add TI 24-channel I/P driver
+            break;      
+
+        case BusType::UJA1023:
+        //TBD add UJA1023 LINbus I/O follower driver
+            break;  
+
+        default:  
+        // error or add more bus drivers eg I2C
+            break;  
+    }         
+}
