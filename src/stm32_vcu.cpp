@@ -1245,7 +1245,7 @@ extern "C" int main(void)
     tim3_setup(); //For general purpose PWM output
 #endif
 
-    Terminal t(USART3, TermCmds);
+    Terminal t(TERM_USART, TermCmds);
 //   FunctionPointerCallback canCb(CanCallback, SetCanFilters);
     Stm32Can c(CAN1, CanHardware::Baud500);
     Stm32Can c2(CAN2, CanHardware::Baud500, true);
@@ -1279,7 +1279,7 @@ extern "C" int main(void)
     CANSPI_Initialize();// init the MCP25625 on CAN3
     CANSPI_ENRx_IRQ();  //init CAN3 Rx IRQ
 
-    LinBus l(USART1, 19200);
+    LinBus l(USART3, 19200);
     lin = &l;
 
     // now that SPI and LIN are configured, enable external I/O
@@ -1320,7 +1320,7 @@ extern "C" int main(void)
     while(1)
     {
       char receivedChar = 0;
-    //   t.Run();
+      t.Run();
       if (sdo.GetPrintRequest() == PRINT_JSON) {
         TerminalCommands::PrintParamsJson(&sdo, &receivedChar);
         }

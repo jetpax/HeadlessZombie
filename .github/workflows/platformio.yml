@@ -1,0 +1,23 @@
+name: PlatformIO Build
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install PlatformIO
+        run: |
+          pip install platformio
+
+      - name: Build Project
+        run: |
+          pio run
