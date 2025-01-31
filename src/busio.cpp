@@ -30,17 +30,37 @@ void BusIo::Configure(BusType btype, uint8_t pin, BusPinMode pmode)
     _btype = btype;
     _mode = pmode;
 
-   switch (pmode)
+    switch (_btype)
     {
-        default:
-        case BusPinMode::HI_Z:
-            MCP2515_PinEn(pin, false);         
+        case BusType::MCP2515:
+            switch (pmode)
+                {
+                    default:
+                    case BusPinMode::HI_Z:
+                        MCP2515_PinEn(pin, false);         
+                        break;
+
+                    case BusPinMode::OUTPUT:
+                        MCP2515_PinEn(pin, true);         
+                        break;
+                }
+
+        case BusType::DRV8912:
+        //TBD add TI DRV8912 12-channel O/P driver
             break;
 
-        case BusPinMode::OUTPUT:
-            MCP2515_PinEn(pin, true);         
-            break;
-    }
+        case BusType::TIC12400:
+        // TBD add TI 24-channel I/P driver
+            break;      
+
+        case BusType::UJA1023:
+        //TBD add UJA1023 LINbus I/O follower driver
+            break;  
+
+        default:  
+        // error or add more bus drivers eg I2C
+            break;   
+    }   
 }
 bool BusIo::Get()    { return _last; }
 

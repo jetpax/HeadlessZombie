@@ -215,7 +215,7 @@ void usart1_setup(void) {
 #endif
 }
 
-#ifndef H_Z      // Not supported on Headless Zombie
+#ifndef H_Z      // Sync serial not supported on Headless Zombie, which uses USART2 for Terminal
 /**
 * Setup USART2 500000 8N1 for Toyota inverter comms
 */
