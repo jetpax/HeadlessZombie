@@ -49,7 +49,7 @@
 
 #ifdef H_Z      // Headless uses SPI1 for CAN, USART 2 for term
 
-#define TERM_USART         USART2
+#define TERM_USART         USART1
 
 #define  CAN3_ISR   exti9_5_isr
 

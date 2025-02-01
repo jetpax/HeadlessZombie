@@ -82,7 +82,7 @@ void clock_setup(void)
     rcc_periph_clock_enable(RCC_TIM3); //PWM outputs
     rcc_periph_clock_enable(RCC_TIM4); //Scheduler
     rcc_periph_clock_enable(RCC_DMA1);  //ADC, and UARTS
-    // rcc_periph_clock_enable(RCC_DMA2);
+    rcc_periph_clock_enable(RCC_DMA2);
     rcc_periph_clock_enable(RCC_ADC1);  // Enable ADC1 clock
     rcc_periph_clock_enable(RCC_CRC);
 #ifdef STM32F1
