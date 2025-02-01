@@ -1,5 +1,7 @@
 # HeadlessZombie VCU
 
+[![Build Status](https://github.com/jetpax/HeadlessZombie/actions/workflows/platformio.yml/badge.svg)](https://github.com/jetpax/HeadlessZombie/actions/workflows/platformio.yml)
+
 Project based on the ZombieVerter by Damien Maguire, which is itself based on the OpenInverter System by Johannes Huebner.
 Provides a universal VCU (Vehicle Control Unit) for electric vehicle conversion projects.
 
