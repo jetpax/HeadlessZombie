@@ -1,4 +1,4 @@
-name: PlatformIO Build
+name: Headless Build
 
 on:
   push:
