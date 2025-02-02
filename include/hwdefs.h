@@ -36,7 +36,7 @@
 
 #elif defined(STM32F4)
 
-#define RCC_CLOCK_SETUP rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
+#define RCC_CLOCK_SETUP rcc_clock_setup_pll(&rcc_hse_12mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
 
 #endif
 
@@ -47,7 +47,7 @@
 
 #define FUELGAUGE_TIMER TIM4
 
-#ifdef H_Z      // Headless uses SPI1 for CAN, USART 2 for term
+#ifdef H_Z      // Headless uses USART 1 for term, SPI1 for CAN
 
 #define TERM_USART         USART1
 

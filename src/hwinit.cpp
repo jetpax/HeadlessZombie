@@ -58,12 +58,16 @@ void clock_setup(void)
     RCC_CLOCK_SETUP;
 
 #ifdef STM32F1
+
     rcc_set_adcpre(RCC_CFGR_ADCPRE_PCLK2_DIV6);
-#elif defined(STM32F4)
-    // Configure APB2 prescaler for ADC clock
-    rcc_set_ppre2(RCC_CFGR_PPRE_DIV4);  // Divide APB2 clock by 4 (example)
-    // Set ADC prescaler
-    ADC_CCR = (ADC_CCR & ~ADC_CCR_ADCPRE_MASK) | ADC_CCR_ADCPRE_BY4;
+
+#else
+
+    rcc_set_ppre1(RCC_CFGR_PPRE_DIV4);  // APB1 = HCLK / 4 = 42MHz for (USART2,3,4)
+    rcc_set_ppre2(RCC_CFGR_PPRE_DIV2);  // APB2 = HCLK = 84MHz for (USART1,6)
+
+    ADC_CCR = (ADC_CCR & ~ADC_CCR_ADCPRE_MASK) | ADC_CCR_ADCPRE_BY4;        // Set ADC prescaler
+
 #endif
     //The reset value for PRIGROUP (=0) is not actually a defined
     //value. Explicitly set 16 preemtion priorities
@@ -174,46 +178,6 @@ void spi3_setup()  // spi3 used for digi pots (fuel gauge etc)
     spi_enable(SPI3);
 }
 
-/**
-* Setup USART1 for LINbus
-*/
-void usart1_setup(void) {
-#ifdef STM32F1
-    /* Setup GPIO pin GPIO_USART1_TX and GPIO_USART1_RX. */
-    gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-                    GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_USART1_TX);
-    gpio_set_mode(GPIOA, GPIO_MODE_INPUT,
-                    GPIO_CNF_INPUT_FLOAT, GPIO_USART1_RX);
-    usart_set_baudrate(USART1, 19200);
-    usart_set_databits(USART1, 8);
-    usart_set_stopbits(USART1, USART_STOPBITS_1);
-    usart_set_mode(USART1, USART_MODE_TX_RX);
-    usart_set_parity(USART1, USART_PARITY_NONE);
-    usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
-    usart_enable(USART1);
-#elif defined(STM32F4)
-    // Enable clocks for USART1 and GPIOB
-    rcc_periph_clock_enable(RCC_USART1);
-    rcc_periph_clock_enable(RCC_GPIOB);
-
-    // Configure PB6 (TX) and PB7 (RX) as Alternate Function for USART1
-    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6 | GPIO7);
-
-    // Set Alternate Function 7 (AF7) for USART1
-    gpio_set_af(GPIOB, GPIO_AF7, GPIO6 | GPIO7);
-
-    // Set up USART1 parameters: 19200 baud, 8N1
-    usart_set_baudrate(USART1, 19200);
-    usart_set_databits(USART1, 8);
-    usart_set_stopbits(USART1, USART_STOPBITS_1);
-    usart_set_parity(USART1, USART_PARITY_NONE);
-    usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
-    usart_set_mode(USART1, USART_MODE_TX_RX);
-
-    // Enable USART1
-    usart_enable(USART1);
-#endif
-}
 
 #ifndef H_Z      // Sync serial not supported on Headless Zombie, which uses USART2 for Terminal
 /**
