@@ -1261,7 +1261,7 @@ extern "C" int main(void)
     }
     CanMap cm(CanMapDev);
     CanSdo sdo(&c, &cm);
-    sdo.SetNodeId(3);//id 3 for vcu?
+    sdo.SetNodeId(1);   //id=1 needed for oic??
     // Set up CAN 1 callback and messages to listen for
 //  c.AddReceiveCallback(&canCb);
 //  c2.AddReceiveCallback(&canCb);
