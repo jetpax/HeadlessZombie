@@ -1279,7 +1279,11 @@ extern "C" int main(void)
     CANSPI_Initialize();// init the MCP25625 on CAN3
     CANSPI_ENRx_IRQ();  //init CAN3 Rx IRQ
 
+#ifdef H_Z  // USART3 TX is PB10, which is the I2C clock on a MicroMod socket
+    LinBus l(USART2, 19200);
+#else
     LinBus l(USART3, 19200);
+#endif
     lin = &l;
 
     // now that SPI and LIN are configured, enable external I/O
